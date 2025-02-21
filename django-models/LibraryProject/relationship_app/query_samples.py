@@ -13,7 +13,7 @@ for book in books:
 # List all books in a library.
 library_name = "library.name"
 library = Library.objects.get(name=library_name)
-books = Book.objects.all()
+books = library.books.all()
 
 print(f"Books in {library.name}: ")
 
