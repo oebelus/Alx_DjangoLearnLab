@@ -22,7 +22,7 @@ for book in books:
 
 # Retrieve the librarian for a library.
 librarian_name = "librarian.name"
-librarian = Librarian.objects.get(name=librarian_name)
+librarian = Librarian.objects.get(library=librarian_name)
 library = librarian.library
 
 for librarian in library:
