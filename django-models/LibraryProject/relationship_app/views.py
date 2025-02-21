@@ -6,11 +6,11 @@ from .models import Book, Library
 def books_view(request):
     books = Book.objects.all()
     context = {'books': books}
-    return render(request, 'list_books.html', context)
+    return render(request, 'relationship_app/list_books.html', context)
 
 class LibraryView(DetailView):
     model = Library
-    template_name = 'list_library.html'
+    template_name = 'relationship_app/list_library.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
