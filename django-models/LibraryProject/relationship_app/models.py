@@ -16,6 +16,18 @@ class Book(models.Model):
 
     def __str__(self):
         return f"{self.title} by {self.author}"  
+    
+    class Meta(models.Model):
+        Permissions_Choices =(
+            ('can_add_book', 'can_add_book'),
+            ('can_change_book', 'can_change_book'),
+            ('can_delete_book', 'can_delete_book'),
+        )
+        permissions = models.CharField(max_length=50,  choices='Permissions_Choices')
+        meta = models.TextField()
+
+        def __str__(self):
+            return f'{self.user.username} - {self.permissions}'
 
 class Library(models.Model):
     name = models.CharField(max_length=100)
