@@ -89,6 +89,12 @@ def can_delete_book_view(request):
     return render(request, 'relationship_app/can_delete_book.html')
 
 @login_required
+@permission_required('bookshelf.can_view', raise_exception=True)
+def book_list(request):
+    books = Book.objects.all()
+    return render(request, 'book_list.html', {'books':books})
+
+@login_required
 @permission_required('bookshelf.can_create', raise_exception=True)
 def create_book(request):
     if request.method == 'POST':
