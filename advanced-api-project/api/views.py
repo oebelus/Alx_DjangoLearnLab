@@ -1,4 +1,4 @@
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.response import Response
 from .serializers import BookSerializer
@@ -7,7 +7,7 @@ from rest_framework import views
 from .models import Book
 
 class ListView(views.APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
     def get(self, request):
         books = Book.objects.all()
@@ -15,7 +15,7 @@ class ListView(views.APIView):
         return Response(serializer.data)
 
 class DetailView(views.APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
     def get_book_by_id(self, id, request):
         book = Book.objects.get(id=id)
