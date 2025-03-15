@@ -1,4 +1,4 @@
-from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.response import Response
 from .serializers import BookSerializer
