@@ -1,85 +1,77 @@
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.authentication import TokenAuthentication
-from rest_framework.response import Response
-from .serializers import BookSerializer
-from rest_framework import status
-from rest_framework import views
-from .models import Book
+from .serializers import AuthorSerializer, BookSerializer
+from django_filters import rest_framework
+from rest_framework import generics
+from rest_framework import viewsets
+from rest_framework import filters
+from .models import Book, Author
 
-class ListView(views.APIView):
-    permission_classes = [IsAuthenticatedOrReadOnly]
+class AuthorViewSet(viewsets.ModelViewSet):
+    queryset = Author.objects.all().prefetch_related('books')
+    serializer_class = AuthorSerializer
 
-    def get(self, request):
-        books = Book.objects.all()
-        serializer = BookSerializer(books, many=True)
-        return Response(serializer.data)
+    def get_queryset(self):
+        queryset = self.queryset
 
-class DetailView(views.APIView):
-    permission_classes = [IsAuthenticatedOrReadOnly]
-
-    def get_book_by_id(self, id, request):
-        book = Book.objects.get(id=id)
-        serializer = BookSerializer(book)
-        return Response(serializer.data)
-
-class CreateView(views.APIView):
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
-
-    def add_book(self, book_data):
-        book = Book.object.create(
-            title=book_data['title'],
-            publication_year=book_data['publication_year'],
-            author=book_data['author']
-        )
-
-        return book
+        name_filter = self.request.query_params.get('name', None)
+        if name_filter is not None:
+            queryset = queryset.filter(name__icontains=name_filter)
+        return queryset
     
-    def post(self, request):
-        serializer = BookSerializer(data=request.data)
+class BookViewSet(viewsets.ModelViewSet):
+    queryset = Author.objects.all()
+    serializer_class = BookSerializer
 
-        if serializer.is_valid():
-            book = self.add_book(serializer.validated_data)
-            return Response(BookSerializer(book).data, status=status.HTTP_201_CREATED)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def get_queryset(self):
+        queryset = self.queryset
 
-class UpdateView(views.APIView):
+        author_name = self.request.query_params.get('author', None)
+        if author_name is not None:
+            queryset = queryset.filter(name__icontains=author_name)
+        return queryset
+    
+class BookListView(generics.ListCreateAPIView):
+    queryset = Book.objects.all()
+    serializer_class = BookSerializer
+    
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['author']  # Allow filtering by author
+    search_fields = ['title', 'author']  # Allow search by book title and author
+    ordering_fields = ['publication_year']
+
+class ListView(generics.ListAPIView):
+    queryset = Book.objects.all()
+    serializer_class = BookSerializer
+    
+    filter_backends = [filters.SearchFilter]
+    search_fields = ["title", "author", "publication_year"]
+
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+class DetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Book.objects.all()
+    serializer_class = BookSerializer
+
+class CreateView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = BookSerializer
+
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def update_book(self, book, book_data):
-        book.title = book_data['title']
-        book.publication_year = book_data['publication_year']
-        book.author = book_data['author']
-        book.save()
+    def perform_create(self, serializer):
+        serializer.save()
+class UpdateView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Book.objects.all()
+    serializer_class = BookSerializer
 
-        return book
-
-    def put(self, request, id):
-        try:
-            book = Book.objects.get(id=id)
-        except Book.DoesNotExist:
-            return Response({"detail": "Book not found."}, status=status.HTTP_404_NOT_FOUND)
-        
-        serializer = BookSerializer(book, data=request.data)
-
-        if serializer.is_valid():
-            self.update_book(book, serializer.validated_data)
-            return Response(BookSerializer(book).data, status=status.HTTP_200_OK)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)        
-
-class DeleteView(views.APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def delete(self, id, request):
-        try:
-            book = Book.objects.get(id=id)
-        except Book.DoesNotExist:
-            return Response({"detail": "Book not found."}, status=status.HTTP_404_NOT_FOUND)
-        
-        book.delete()
+class DeleteView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Book.objects.all()
+    serializer_class = BookSerializer
 
-        return Response(status=status.HTTP_204_NO_CONTENT)
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
