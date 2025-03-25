@@ -68,3 +68,34 @@ class CommentViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
     
+class FeedView(generics.GenericAPIView):
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+    def get(self, request, *args, **kwargs):
+        following_users = request.user.following.all()
+        posts = Post.objects.filter(author__in=following_users).order_by('-created_at')
+        serializer = PostSerializer(posts, many=True)   
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+class LikeView(generics.GenericAPIView):
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+    def post(self, request, pk, *args, **kwargs):
+        post = generics.get_object_or_404(Post, pk=pk)
+
+        like, created = Like.objects.get_or_create(user=request.user, post=post)
+
+        if created:
+            Notification.objects.create(
+                recipient = post.author,
+                actor = request.user,
+                verb = 'liked',
+                content_type = ContentType.objects.get_for_model(Post),
+                object_id = post.id
+            )
+            return Response({'message': 'Post liked'}, status=status.HTTP_200_OK)
+
+        else:
+            like.delete()
+            return Response({'message': 'Post unliked'}, status=status.HTTP_200_OK)
+     
